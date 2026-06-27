@@ -672,7 +672,7 @@ function Dashboard() {
     return (
       <div style={{ padding: 24, color: COLORS.sub }}>
         <div className="gk-display" style={{ color: COLORS.gold, fontSize: 18 }}>
-          Loading Vault...
+          Գանձարանը բեռնվում է...
         </div>
         <div style={{ marginTop: 14 }}>
           <div style={{ height: 8, background: "#1c1c22", borderRadius: 6, overflow: "hidden" }}>
