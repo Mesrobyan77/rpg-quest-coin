@@ -699,21 +699,33 @@ function Dashboard() {
         whileTap={{ scale: 0.92 }}
         whileHover={{ scale: 1.04 }}
         style={{
-          position: "fixed",
-          bottom: 24,
-          left: "50%",
-          transform: "translateX(-50%)",
+          position: "sticky",
+          bottom: 20,
+          marginTop: 24,
+          marginLeft: "auto",
+          marginRight: 4,
+          width: 64,
           zIndex: 50,
         }}
       >
         <Button
           className="gk-fab"
           size="large"
-          icon={<PlusOutlined />}
           onClick={() => setOpen(true)}
-          style={{ height: 56, borderRadius: 999, padding: "0 26px", fontSize: 16 }}
+          aria-label="Նոր քվեստ"
+          style={{
+            height: 64,
+            width: 64,
+            borderRadius: 999,
+            padding: 0,
+            fontSize: 32,
+            lineHeight: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
         >
-          Նոր քվեստ գրանցել
+          +
         </Button>
       </motion.div>
 
