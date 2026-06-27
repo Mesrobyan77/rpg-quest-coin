@@ -1106,7 +1106,7 @@ function TxRow({ tx }: { tx: Transaction }) {
           }}
         >
           <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
-            {tx.type === "TRANSFER" ? "Wallet Transfer" : tx.category}
+            {tx.type === "TRANSFER" ? "Դրամապանակների փոխանցում" : tx.category}
           </span>
         </div>
         <div
