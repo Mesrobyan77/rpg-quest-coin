@@ -26,6 +26,8 @@ import {
   message,
   Tag,
   Alert,
+  Modal,
+  Descriptions,
 } from "antd";
 import {
   PlusOutlined,
@@ -41,6 +43,7 @@ import {
   ReloadOutlined,
 } from "@ant-design/icons";
 import { motion, AnimatePresence } from "framer-motion";
+import { formatDate } from "date-fns";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -62,7 +65,6 @@ export const Route = createFileRoute("/")({
   component: GoldKeeperRoot,
 });
 
-
 /* ============================ Types ============================ */
 
 type Wallet = "CARD" | "CASH";
@@ -72,8 +74,8 @@ interface Transaction {
   id: string;
   type: TxType;
   amount: number;
-  wallet: Wallet;          // source wallet for EXPENSE/TRANSFER, target for INCOME
-  toWallet?: Wallet;       // only for TRANSFER
+  wallet: Wallet; // source wallet for EXPENSE/TRANSFER, target for INCOME
+  toWallet?: Wallet; // only for TRANSFER
   category: string;
   note?: string;
   createdAt: number;
@@ -109,7 +111,6 @@ const CATEGORIES: Record<TxType, string[]> = {
   EXPENSE: ["Սնունդ", "Տրանսպորտ", "Աշխատանքի վայր", "Այլ"],
   TRANSFER: ["Դրամապանակների փոխանցում"],
 };
-
 
 /* ============================ Storage ============================ */
 
@@ -339,8 +340,8 @@ class AppErrorBoundary extends Component<{ children: ReactNode }, BoundaryState>
             }
             description={
               <div style={{ color: COLORS.sub, fontSize: 13, lineHeight: 1.5 }}>
-                Անսպասելի սխալ է տեղի ունեցել ինտերֆեյսում։ Քո Գանձն ապահով է՝
-                պահված տեղական հիշողության մեջ։ Փորձիր կրկին կամ վերաբեռնիր էջը։
+                Անսպասելի սխալ է տեղի ունեցել ինտերֆեյսում։ Քո Գանձն ապահով է՝ պահված տեղական
+                հիշողության մեջ։ Փորձիր կրկին կամ վերաբեռնիր էջը։
               </div>
             }
             style={{
@@ -410,9 +411,7 @@ function InlineErrorBanner({ error, onDismiss }: InlineErrorBannerProps) {
             Սխալ՝ {error.name}
           </span>
         }
-        description={
-          <span style={{ color: COLORS.sub, fontSize: 12 }}>{error.message}</span>
-        }
+        description={<span style={{ color: COLORS.sub, fontSize: 12 }}>{error.message}</span>}
         style={{
           background: "#1a0e10",
           border: `1px solid ${COLORS.danger}55`,
@@ -459,7 +458,6 @@ function GoldKeeperApp() {
   const reportError = useCallback((e: unknown) => {
     setSoftError(e instanceof Error ? e : new Error(String(e)));
   }, []);
-
 
   return (
     <ConfigProvider
@@ -636,14 +634,14 @@ function FloatLayer() {
                 f.kind === "damage"
                   ? COLORS.danger
                   : f.kind === "heal"
-                  ? COLORS.hp
-                  : COLORS.transfer,
+                    ? COLORS.hp
+                    : COLORS.transfer,
               textShadow:
                 f.kind === "damage"
                   ? `0 0 18px ${COLORS.danger}, 0 0 36px ${COLORS.danger}99`
                   : f.kind === "heal"
-                  ? `0 0 18px ${COLORS.hp}, 0 0 36px ${COLORS.hp}99`
-                  : `0 0 18px ${COLORS.transfer}, 0 0 36px ${COLORS.transfer}99`,
+                    ? `0 0 18px ${COLORS.hp}, 0 0 36px ${COLORS.hp}99`
+                    : `0 0 18px ${COLORS.transfer}, 0 0 36px ${COLORS.transfer}99`,
             }}
           >
             {f.text}
@@ -852,7 +850,9 @@ function LevelCard() {
           <span>
             ՓՈՐՁ {formatAmount(goldIntoLevel)} / {formatAmount(LEVEL_UNIT)}
           </span>
-          <span>{formatAmount(goldToNext)} ֏ մինչև ՄԱԿ. {level + 1}</span>
+          <span>
+            {formatAmount(goldToNext)} ֏ մինչև ՄԱԿ. {level + 1}
+          </span>
         </div>
       </div>
     </motion.div>
@@ -958,6 +958,8 @@ function WalletCard(props: {
 
 function QuestLog() {
   const { transactions } = useVault();
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalData, setModalData] = useState<Transaction | null>(null);
 
   const grouped = useMemo(() => {
     const map = new Map<string, Transaction[]>();
@@ -994,10 +996,7 @@ function QuestLog() {
       </div>
 
       {transactions.length === 0 ? (
-        <div
-          className="gk-panel"
-          style={{ padding: 28, textAlign: "center" }}
-        >
+        <div className="gk-panel" style={{ padding: 28, textAlign: "center" }}>
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}
             description={
@@ -1009,7 +1008,14 @@ function QuestLog() {
         </div>
       ) : (
         grouped.map(([key, items]) => (
-          <div key={key} style={{ marginBottom: 18 }}>
+          <div
+            key={key}
+            style={{ marginBottom: 18, cursor: "pointer" }}
+            onClick={() => {
+              setModalData(items[0]);
+              setModalVisible(true);
+            }}
+          >
             <div
               style={{
                 display: "flex",
@@ -1041,6 +1047,38 @@ function QuestLog() {
           </div>
         ))
       )}
+
+      <Modal
+        title={`${modalData?.type === "EXPENSE" ? "🔴 Expense" : "🟢 Income"} Details`}
+        open={modalVisible}
+        onOk={() => setModalVisible(false)}
+        onCancel={() => setModalVisible(false)}
+        destroyOnHidden
+      >
+        <Descriptions bordered column={1} size="small" style={{ marginTop: 16 }}>
+          <Descriptions.Item label="Amount">
+            <span
+              style={{ fontWeight: "bold", color: modalData?.type === "EXPENSE" ? "#cf1322" : "#3f8600" }}
+            >
+              ${modalData?.amount}
+            </span>
+          </Descriptions.Item>
+
+          <Descriptions.Item label="Wallet">
+            <Tag color="blue">{modalData?.wallet}</Tag>
+          </Descriptions.Item>
+
+          <Descriptions.Item label="Category">{modalData?.category}</Descriptions.Item>
+
+          {modalData?.note && <Descriptions.Item label="Note">{modalData?.note}</Descriptions.Item>}
+
+          <Descriptions.Item label="Created At">{modalData?.createdAt}</Descriptions.Item>
+
+          <Descriptions.Item label="ID">
+            <span style={{ fontSize: 12, color: "#8c8c8c" }}>{modalData?.id}</span>
+          </Descriptions.Item>
+        </Descriptions>
+      </Modal>
     </div>
   );
 }
@@ -1054,8 +1092,8 @@ function TxRow({ tx }: { tx: Transaction }) {
     tx.type === "TRANSFER"
       ? `${tx.wallet === "CARD" ? "Մանա" : "Կենս."} → ${tx.toWallet === "CARD" ? "Մանա" : "Կենս."}`
       : tx.wallet === "CARD"
-      ? "Մանա դրամապանակ"
-      : "Կենս. դրամապանակ";
+        ? "Մանա դրամապանակ"
+        : "Կենս. դրամապանակ";
 
   return (
     <motion.div
@@ -1199,9 +1237,7 @@ function TransactionDrawer({ open, onClose }: { open: boolean; onClose: () => vo
     setType(val);
     form.setFieldsValue({
       category: CATEGORIES[val][0],
-      ...(val === "TRANSFER"
-        ? { wallet: "CARD", toWallet: "CASH" }
-        : {}),
+      ...(val === "TRANSFER" ? { wallet: "CARD", toWallet: "CASH" } : {}),
     });
   };
 
@@ -1251,8 +1287,8 @@ function TransactionDrawer({ open, onClose }: { open: boolean; onClose: () => vo
         values.type === "INCOME"
           ? "Գանձը ավելացավ։"
           : values.type === "EXPENSE"
-          ? "Գանձ ծախսվեց։"
-          : "Գանձ փոխանցվեց։",
+            ? "Գանձ ծախսվեց։"
+            : "Գանձ փոխանցվեց։",
       duration: 1.4,
     });
     onClose();
@@ -1268,7 +1304,12 @@ function TransactionDrawer({ open, onClose }: { open: boolean; onClose: () => vo
       title="ՆՈՐ ՔՎԵՍՏ ԳՐԱՌՈՒՄ"
       styles={{
         body: { background: COLORS.panel, paddingTop: 14 },
-        wrapper: { maxWidth: 430, margin: "0 auto", borderRadius: "20px 20px 0 0", overflow: "hidden" },
+        wrapper: {
+          maxWidth: 430,
+          margin: "0 auto",
+          borderRadius: "20px 20px 0 0",
+          overflow: "hidden",
+        },
       }}
     >
       <Form<FormShape>
@@ -1337,10 +1378,7 @@ function TransactionDrawer({ open, onClose }: { open: boolean; onClose: () => vo
 
         {type !== "TRANSFER" && (
           <Form.Item name="category" label="Քվեստի տեսակ">
-            <Select
-              size="large"
-              options={CATEGORIES[type].map((c) => ({ label: c, value: c }))}
-            />
+            <Select size="large" options={CATEGORIES[type].map((c) => ({ label: c, value: c }))} />
           </Form.Item>
         )}
 
@@ -1361,8 +1399,8 @@ function TransactionDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                 type === "INCOME"
                   ? `linear-gradient(135deg, ${COLORS.hp}, #237804)`
                   : type === "EXPENSE"
-                  ? `linear-gradient(135deg, ${COLORS.danger}, #a8071a)`
-                  : `linear-gradient(135deg, ${COLORS.transfer}, #531dab)`,
+                    ? `linear-gradient(135deg, ${COLORS.danger}, #a8071a)`
+                    : `linear-gradient(135deg, ${COLORS.transfer}, #531dab)`,
               color: "#fff",
               fontWeight: 800,
               border: "none",
@@ -1370,8 +1408,8 @@ function TransactionDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                 type === "INCOME"
                   ? `0 0 18px ${COLORS.hp}66`
                   : type === "EXPENSE"
-                  ? `0 0 18px ${COLORS.danger}66`
-                  : `0 0 18px ${COLORS.transfer}66`,
+                    ? `0 0 18px ${COLORS.danger}66`
+                    : `0 0 18px ${COLORS.transfer}66`,
             }}
           >
             {type === "INCOME" ? "Ստանալ" : type === "EXPENSE" ? "Ծախսել" : "Փոխանցել"}
