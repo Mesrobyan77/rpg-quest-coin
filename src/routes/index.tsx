@@ -290,9 +290,185 @@ const dayLabel = (ts: number) => {
 const timeLabel = (ts: number) =>
   new Date(ts).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
 
-/* ============================ Root ============================ */
+/* ============================ Root + Error Boundary ============================ */
+
+interface BoundaryState {
+  error: Error | null;
+  info: ErrorInfo | null;
+}
+
+class AppErrorBoundary extends Component<{ children: ReactNode }, BoundaryState> {
+  state: BoundaryState = { error: null, info: null };
+
+  static getDerivedStateFromError(error: Error): BoundaryState {
+    return { error, info: null };
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    this.setState({ error, info });
+    // eslint-disable-next-line no-console
+    console.error("[GoldKeeper] Top-level boundary caught:", error, info);
+  }
+
+  reset = () => this.setState({ error: null, info: null });
+
+  reload = () => {
+    if (typeof window !== "undefined") window.location.reload();
+  };
+
+  render() {
+    if (!this.state.error) return this.props.children;
+    const err = this.state.error;
+    const stack = (err.stack || "").split("\n").slice(0, 6).join("\n");
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          background: COLORS.bg,
+          color: COLORS.text,
+          display: "flex",
+          justifyContent: "center",
+          padding: "32px 16px",
+          fontFamily: "'Rajdhani', system-ui, sans-serif",
+        }}
+      >
+        <div style={{ width: "100%", maxWidth: 430 }}>
+          <Alert
+            type="error"
+            showIcon
+            icon={<WarningFilled style={{ color: COLORS.danger }} />}
+            message={
+              <span
+                className="gk-display"
+                style={{ color: COLORS.danger, fontWeight: 800, letterSpacing: "0.06em" }}
+              >
+                ՀԵՐՈՍԸ ՊԱՐՏՎԵՑ
+              </span>
+            }
+            description={
+              <div style={{ color: COLORS.sub, fontSize: 13, lineHeight: 1.5 }}>
+                Անսպասելի սխալ է տեղի ունեցել ինտերֆեյսում։ Քո Ոսկին ապահով է՝
+                պահված տեղական հիշողության մեջ։ Փորձիր կրկին կամ վերաբեռնիր էջը։
+              </div>
+            }
+            style={{
+              background: "#1a0e10",
+              border: `1px solid ${COLORS.danger}55`,
+              borderRadius: 14,
+            }}
+          />
+          <pre
+            style={{
+              marginTop: 14,
+              padding: 12,
+              background: "#0d0d11",
+              border: `1px solid ${COLORS.border}`,
+              borderRadius: 12,
+              fontSize: 11,
+              color: COLORS.sub,
+              overflowX: "auto",
+              whiteSpace: "pre-wrap",
+              wordBreak: "break-word",
+            }}
+          >
+            {err.name}: {err.message}
+            {stack ? `\n\n${stack}` : ""}
+          </pre>
+          <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
+            <Button block size="large" icon={<ReloadOutlined />} onClick={this.reset}>
+              Վերսկսել
+            </Button>
+            <Button
+              block
+              size="large"
+              type="primary"
+              onClick={this.reload}
+              style={{ background: COLORS.gold, color: "#141414", fontWeight: 800, border: "none" }}
+            >
+              Վերաբեռնել էջը
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+}
+
+interface InlineErrorBannerProps {
+  error: Error;
+  onDismiss: () => void;
+}
+
+function InlineErrorBanner({ error, onDismiss }: InlineErrorBannerProps) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      style={{ padding: "0 16px", marginBottom: 10 }}
+    >
+      <Alert
+        type="error"
+        showIcon
+        closable
+        onClose={onDismiss}
+        icon={<WarningFilled style={{ color: COLORS.danger }} />}
+        message={
+          <span style={{ color: COLORS.danger, fontWeight: 700, fontSize: 13 }}>
+            Սխալ՝ {error.name}
+          </span>
+        }
+        description={
+          <span style={{ color: COLORS.sub, fontSize: 12 }}>{error.message}</span>
+        }
+        style={{
+          background: "#1a0e10",
+          border: `1px solid ${COLORS.danger}55`,
+          borderRadius: 12,
+        }}
+      />
+    </motion.div>
+  );
+}
+
+interface RuntimeErrorCtx {
+  reportError: (e: unknown) => void;
+}
+const RuntimeErrorContext = createContext<RuntimeErrorCtx | null>(null);
+export const useRuntimeError = () => useContext(RuntimeErrorContext);
+
+function GoldKeeperRoot() {
+  return (
+    <AppErrorBoundary>
+      <GoldKeeperApp />
+    </AppErrorBoundary>
+  );
+}
 
 function GoldKeeperApp() {
+  const [softError, setSoftError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    const onError = (e: ErrorEvent) => {
+      setSoftError(e.error instanceof Error ? e.error : new Error(e.message || "Անհայտ սխալ"));
+    };
+    const onRejection = (e: PromiseRejectionEvent) => {
+      const reason = e.reason;
+      setSoftError(reason instanceof Error ? reason : new Error(String(reason ?? "Անհայտ սխալ")));
+    };
+    window.addEventListener("error", onError);
+    window.addEventListener("unhandledrejection", onRejection);
+    return () => {
+      window.removeEventListener("error", onError);
+      window.removeEventListener("unhandledrejection", onRejection);
+    };
+  }, []);
+
+  const reportError = useCallback((e: unknown) => {
+    setSoftError(e instanceof Error ? e : new Error(String(e)));
+  }, []);
+
+
   return (
     <ConfigProvider
       theme={{
