@@ -1261,7 +1261,7 @@ function TransactionDrawer({ open, onClose }: { open: boolean; onClose: () => vo
       placement="bottom"
       height="auto"
       closable
-      title="NEW QUEST ENTRY"
+      title="ՆՈՐ ՔՎԵՍՏ ԳՐԱՌՈՒՄ"
       styles={{
         body: { background: COLORS.panel, paddingTop: 14 },
         wrapper: { maxWidth: 430, margin: "0 auto", borderRadius: "20px 20px 0 0", overflow: "hidden" },
