@@ -1,5 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState, useCallback, createContext, useContext } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  useCallback,
+  createContext,
+  useContext,
+  Component,
+  type ErrorInfo,
+  type ReactNode,
+} from "react";
 import {
   ConfigProvider,
   theme as antdTheme,
@@ -15,29 +25,43 @@ import {
   Popconfirm,
   message,
   Tag,
+  Alert,
 } from "antd";
-import PlusOutlined from "@ant-design/icons/PlusOutlined";
-import ThunderboltFilled from "@ant-design/icons/ThunderboltFilled";
-import HeartFilled from "@ant-design/icons/HeartFilled";
-import TrophyFilled from "@ant-design/icons/TrophyFilled";
-import DeleteOutlined from "@ant-design/icons/DeleteOutlined";
-import SwapOutlined from "@ant-design/icons/SwapOutlined";
-import FireFilled from "@ant-design/icons/FireFilled";
-import RiseOutlined from "@ant-design/icons/RiseOutlined";
-import FallOutlined from "@ant-design/icons/FallOutlined";
+import {
+  PlusOutlined,
+  ThunderboltFilled,
+  HeartFilled,
+  TrophyFilled,
+  DeleteOutlined,
+  SwapOutlined,
+  FireFilled,
+  RiseOutlined,
+  FallOutlined,
+  WarningFilled,
+  ReloadOutlined,
+} from "@ant-design/icons";
 import { motion, AnimatePresence } from "framer-motion";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "GoldKeeper — RPG Finance Quest" },
-      { name: "description", content: "A gamified personal finance dashboard. Track your Gold, manage Mana & HP wallets, and level up your wealth." },
-      { property: "og:title", content: "GoldKeeper — RPG Finance Quest" },
-      { property: "og:description", content: "A gamified personal finance dashboard. Track your Gold, manage Mana & HP wallets, and level up your wealth." },
+      { title: "GoldKeeper — RPG ֆինանսային արկած" },
+      {
+        name: "description",
+        content:
+          "Խաղայնացված անձնական ֆինանսների վահանակ։ Հետևի՛ր քո Ոսկուն, կառավարի՛ր Մանա և Կենսունակություն դրամապանակները։",
+      },
+      { property: "og:title", content: "GoldKeeper — RPG ֆինանսային արկած" },
+      {
+        property: "og:description",
+        content:
+          "Խաղայնացված անձնական ֆինանսների վահանակ։ Հետևի՛ր քո Ոսկուն, կառավարի՛ր Մանա և Կենսունակություն դրամապանակները։",
+      },
     ],
   }),
-  component: GoldKeeperApp,
+  component: GoldKeeperRoot,
 });
+
 
 /* ============================ Types ============================ */
 
@@ -81,10 +105,19 @@ const COLORS = {
 };
 
 const CATEGORIES: Record<TxType, string[]> = {
-  INCOME: ["Quest Reward", "Loot Drop", "Daily Bounty", "Treasure Chest", "Trade Profit"],
-  EXPENSE: ["Food / Potions", "Transport / Mount", "Gear / Equipment", "Tavern / Leisure", "Spells / Subscriptions", "Healing / Health", "Misc Scroll"],
-  TRANSFER: ["Wallet Transfer"],
+  INCOME: ["Քվեստի վարձատրություն", "Ավար / Loot", "Օրական առաջադրանք", "Գանձի սնդուկ", "Առևտրի շահույթ"],
+  EXPENSE: [
+    "Սնունդ / Խմիչքներ",
+    "Տրանսպորտ / Ձի",
+    "Զրահ / Սարքավորում",
+    "Պանդոկ / Ժամանց",
+    "Կախարդանքներ / Բաժանորդագրություններ",
+    "Բուժում / Առողջություն",
+    "Այլ մագաղաթ",
+  ],
+  TRANSFER: ["Դրամապանակների փոխանցում"],
 };
+
 
 /* ============================ Storage ============================ */
 
@@ -249,17 +282,193 @@ const dayLabel = (ts: number) => {
   const today = new Date();
   const yest = new Date();
   yest.setDate(today.getDate() - 1);
-  if (d.toDateString() === today.toDateString()) return "Today";
-  if (d.toDateString() === yest.toDateString()) return "Yesterday";
+  if (d.toDateString() === today.toDateString()) return "Այսօր";
+  if (d.toDateString() === yest.toDateString()) return "Երեկ";
   return d.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
 };
 
 const timeLabel = (ts: number) =>
   new Date(ts).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
 
-/* ============================ Root ============================ */
+/* ============================ Root + Error Boundary ============================ */
+
+interface BoundaryState {
+  error: Error | null;
+  info: ErrorInfo | null;
+}
+
+class AppErrorBoundary extends Component<{ children: ReactNode }, BoundaryState> {
+  state: BoundaryState = { error: null, info: null };
+
+  static getDerivedStateFromError(error: Error): BoundaryState {
+    return { error, info: null };
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    this.setState({ error, info });
+    // eslint-disable-next-line no-console
+    console.error("[GoldKeeper] Top-level boundary caught:", error, info);
+  }
+
+  reset = () => this.setState({ error: null, info: null });
+
+  reload = () => {
+    if (typeof window !== "undefined") window.location.reload();
+  };
+
+  render() {
+    if (!this.state.error) return this.props.children;
+    const err = this.state.error;
+    const stack = (err.stack || "").split("\n").slice(0, 6).join("\n");
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          background: COLORS.bg,
+          color: COLORS.text,
+          display: "flex",
+          justifyContent: "center",
+          padding: "32px 16px",
+          fontFamily: "'Rajdhani', system-ui, sans-serif",
+        }}
+      >
+        <div style={{ width: "100%", maxWidth: 430 }}>
+          <Alert
+            type="error"
+            showIcon
+            icon={<WarningFilled style={{ color: COLORS.danger }} />}
+            message={
+              <span
+                className="gk-display"
+                style={{ color: COLORS.danger, fontWeight: 800, letterSpacing: "0.06em" }}
+              >
+                ՀԵՐՈՍԸ ՊԱՐՏՎԵՑ
+              </span>
+            }
+            description={
+              <div style={{ color: COLORS.sub, fontSize: 13, lineHeight: 1.5 }}>
+                Անսպասելի սխալ է տեղի ունեցել ինտերֆեյսում։ Քո Ոսկին ապահով է՝
+                պահված տեղական հիշողության մեջ։ Փորձիր կրկին կամ վերաբեռնիր էջը։
+              </div>
+            }
+            style={{
+              background: "#1a0e10",
+              border: `1px solid ${COLORS.danger}55`,
+              borderRadius: 14,
+            }}
+          />
+          <pre
+            style={{
+              marginTop: 14,
+              padding: 12,
+              background: "#0d0d11",
+              border: `1px solid ${COLORS.border}`,
+              borderRadius: 12,
+              fontSize: 11,
+              color: COLORS.sub,
+              overflowX: "auto",
+              whiteSpace: "pre-wrap",
+              wordBreak: "break-word",
+            }}
+          >
+            {err.name}: {err.message}
+            {stack ? `\n\n${stack}` : ""}
+          </pre>
+          <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
+            <Button block size="large" icon={<ReloadOutlined />} onClick={this.reset}>
+              Վերսկսել
+            </Button>
+            <Button
+              block
+              size="large"
+              type="primary"
+              onClick={this.reload}
+              style={{ background: COLORS.gold, color: "#141414", fontWeight: 800, border: "none" }}
+            >
+              Վերաբեռնել էջը
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+}
+
+interface InlineErrorBannerProps {
+  error: Error;
+  onDismiss: () => void;
+}
+
+function InlineErrorBanner({ error, onDismiss }: InlineErrorBannerProps) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      style={{ padding: "0 16px", marginBottom: 10 }}
+    >
+      <Alert
+        type="error"
+        showIcon
+        closable
+        onClose={onDismiss}
+        icon={<WarningFilled style={{ color: COLORS.danger }} />}
+        message={
+          <span style={{ color: COLORS.danger, fontWeight: 700, fontSize: 13 }}>
+            Սխալ՝ {error.name}
+          </span>
+        }
+        description={
+          <span style={{ color: COLORS.sub, fontSize: 12 }}>{error.message}</span>
+        }
+        style={{
+          background: "#1a0e10",
+          border: `1px solid ${COLORS.danger}55`,
+          borderRadius: 12,
+        }}
+      />
+    </motion.div>
+  );
+}
+
+interface RuntimeErrorCtx {
+  reportError: (e: unknown) => void;
+}
+const RuntimeErrorContext = createContext<RuntimeErrorCtx | null>(null);
+export const useRuntimeError = () => useContext(RuntimeErrorContext);
+
+function GoldKeeperRoot() {
+  return (
+    <AppErrorBoundary>
+      <GoldKeeperApp />
+    </AppErrorBoundary>
+  );
+}
 
 function GoldKeeperApp() {
+  const [softError, setSoftError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    const onError = (e: ErrorEvent) => {
+      setSoftError(e.error instanceof Error ? e.error : new Error(e.message || "Անհայտ սխալ"));
+    };
+    const onRejection = (e: PromiseRejectionEvent) => {
+      const reason = e.reason;
+      setSoftError(reason instanceof Error ? reason : new Error(String(reason ?? "Անհայտ սխալ")));
+    };
+    window.addEventListener("error", onError);
+    window.addEventListener("unhandledrejection", onRejection);
+    return () => {
+      window.removeEventListener("error", onError);
+      window.removeEventListener("unhandledrejection", onRejection);
+    };
+  }, []);
+
+  const reportError = useCallback((e: unknown) => {
+    setSoftError(e instanceof Error ? e : new Error(String(e)));
+  }, []);
+
+
   return (
     <ConfigProvider
       theme={{
@@ -286,12 +495,23 @@ function GoldKeeperApp() {
         },
       }}
     >
-      <VaultProvider>
-        <StyleInjector />
-        <BackdropFrame>
-          <Dashboard />
-        </BackdropFrame>
-      </VaultProvider>
+      <RuntimeErrorContext.Provider value={{ reportError }}>
+        <VaultProvider>
+          <StyleInjector />
+          <BackdropFrame>
+            <AnimatePresence>
+              {softError && (
+                <InlineErrorBanner
+                  key="soft-error"
+                  error={softError}
+                  onDismiss={() => setSoftError(null)}
+                />
+              )}
+            </AnimatePresence>
+            <Dashboard />
+          </BackdropFrame>
+        </VaultProvider>
+      </RuntimeErrorContext.Provider>
     </ConfigProvider>
   );
 }
@@ -452,7 +672,7 @@ function Dashboard() {
     return (
       <div style={{ padding: 24, color: COLORS.sub }}>
         <div className="gk-display" style={{ color: COLORS.gold, fontSize: 18 }}>
-          Loading Vault...
+          Գանձարանը բեռնվում է...
         </div>
         <div style={{ marginTop: 14 }}>
           <div style={{ height: 8, background: "#1c1c22", borderRadius: 6, overflow: "hidden" }}>
@@ -501,7 +721,7 @@ function Dashboard() {
           onClick={() => setOpen(true)}
           style={{ height: 56, borderRadius: 999, padding: "0 26px", fontSize: 16 }}
         >
-          New Quest Entry
+          Նոր քվեստ գրանցել
         </Button>
       </motion.div>
 
@@ -543,7 +763,7 @@ function Header() {
             GOLDKEEPER
           </div>
           <div style={{ fontSize: 10, color: COLORS.sub, letterSpacing: "0.18em" }}>
-            FINANCE · QUEST · LOG
+            ՖԻՆԱՆՍ · ՔՎԵՍՏ · ՄԱՏՅԱՆ
           </div>
         </div>
       </div>
@@ -558,7 +778,7 @@ function Header() {
           fontSize: 12,
         }}
       >
-        LVL {level}
+        ՄԱԿ. {level}
       </Tag>
     </div>
   );
@@ -580,7 +800,7 @@ function LevelCard() {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
           <div style={{ fontSize: 11, color: COLORS.sub, letterSpacing: "0.18em" }}>
-            TOTAL GOLD
+            ԸՆԴԱՄԵՆԸ ՈՍԿԻ
           </div>
           <div
             className="gk-display gk-glow-gold"
@@ -596,7 +816,7 @@ function LevelCard() {
           </div>
         </div>
         <div style={{ textAlign: "right" }}>
-          <div style={{ fontSize: 11, color: COLORS.sub, letterSpacing: "0.18em" }}>LEVEL</div>
+          <div style={{ fontSize: 11, color: COLORS.sub, letterSpacing: "0.18em" }}>ՄԱԿԱՐԴԱԿ</div>
           <div
             className="gk-display gk-glow-gold"
             style={{ fontSize: 32, color: COLORS.gold, fontWeight: 900 }}
@@ -626,9 +846,9 @@ function LevelCard() {
           }}
         >
           <span>
-            XP {formatAmount(goldIntoLevel)} / {formatAmount(LEVEL_UNIT)}
+            ՓՈՐՁ {formatAmount(goldIntoLevel)} / {formatAmount(LEVEL_UNIT)}
           </span>
-          <span>{formatAmount(goldToNext)} ֏ to LVL {level + 1}</span>
+          <span>{formatAmount(goldToNext)} ֏ մինչև ՄԱԿ. {level + 1}</span>
         </div>
       </div>
     </motion.div>
@@ -644,8 +864,8 @@ function WalletGrid() {
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
       <WalletCard
-        title="MANA"
-        subtitle="Card Wallet"
+        title="ՄԱՆԱ"
+        subtitle="Քարտի դրամապանակ"
         amount={cardBalance}
         color={COLORS.mana}
         glow="gk-glow-mana"
@@ -654,8 +874,8 @@ function WalletGrid() {
         percent={safe(cardBalance)}
       />
       <WalletCard
-        title="HEALTH"
-        subtitle="Cash Wallet"
+        title="ԿԵՆՍ."
+        subtitle="Կանխիկ դրամապանակ"
         amount={cashBalance}
         color={COLORS.hp}
         glow="gk-glow-hp"
@@ -762,10 +982,10 @@ function QuestLog() {
           className="gk-display"
           style={{ color: COLORS.gold, fontSize: 13, letterSpacing: "0.18em" }}
         >
-          QUEST LOG
+          ՔՎԵՍՏԵՐԻ ՄԱՏՅԱՆ
         </div>
         <div style={{ fontSize: 11, color: COLORS.sub, letterSpacing: "0.12em" }}>
-          {transactions.length} ENTRIES
+          {transactions.length} ԳՐԱՌՈՒՄ
         </div>
       </div>
 
@@ -778,7 +998,7 @@ function QuestLog() {
             image={Empty.PRESENTED_IMAGE_SIMPLE}
             description={
               <span style={{ color: COLORS.sub }}>
-                No quests logged yet. Begin your journey, hero.
+                Դեռ քվեստեր չկան։ Սկսի՛ր քո ճանապարհորդությունը, հերոս։
               </span>
             }
           />
@@ -828,10 +1048,10 @@ function TxRow({ tx }: { tx: Transaction }) {
   const sign = tx.type === "INCOME" ? "+" : tx.type === "EXPENSE" ? "-" : "⇄";
   const label =
     tx.type === "TRANSFER"
-      ? `${tx.wallet === "CARD" ? "Mana" : "HP"} → ${tx.toWallet === "CARD" ? "Mana" : "HP"}`
+      ? `${tx.wallet === "CARD" ? "Մանա" : "Կենս."} → ${tx.toWallet === "CARD" ? "Մանա" : "Կենս."}`
       : tx.wallet === "CARD"
-      ? "Mana Wallet"
-      : "HP Wallet";
+      ? "Մանա դրամապանակ"
+      : "Կենս. դրամապանակ";
 
   return (
     <motion.div
@@ -886,7 +1106,7 @@ function TxRow({ tx }: { tx: Transaction }) {
           }}
         >
           <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
-            {tx.type === "TRANSFER" ? "Wallet Transfer" : tx.category}
+            {tx.type === "TRANSFER" ? "Դրամապանակների փոխանցում" : tx.category}
           </span>
         </div>
         <div
@@ -919,13 +1139,13 @@ function TxRow({ tx }: { tx: Transaction }) {
           {formatAmount(tx.amount)} ֏
         </span>
         <Popconfirm
-          title="Undo this quest?"
-          description="Balances will be recalculated."
-          okText="Undo"
-          cancelText="Keep"
+          title="Չեղարկե՞լ այս քվեստը։"
+          description="Մնացորդները կվերահաշվարկվեն։"
+          okText="Չեղարկել"
+          cancelText="Պահել"
           onConfirm={() => {
             removeTransaction(tx.id);
-            message.success({ content: "Quest entry undone.", duration: 1.4 });
+            message.success({ content: "Քվեստի գրառումը չեղարկվեց։", duration: 1.4 });
           }}
         >
           <Button
@@ -991,18 +1211,18 @@ function TransactionDrawer({ open, onClose }: { open: boolean; onClose: () => vo
   const handleSubmit = (values: FormShape) => {
     const amount = Number(values.amount);
     if (!amount || amount <= 0) {
-      message.error("Enter a valid amount, hero.");
+      message.error("Մուտքագրի՛ր վավեր գումար, հերոս։");
       return;
     }
     if (values.type === "TRANSFER") {
       if (values.wallet === values.toWallet) {
-        message.error("Source and destination wallets must differ.");
+        message.error("Աղբյուր և նպատակային դրամապանակները պետք է տարբեր լինեն։");
         return;
       }
       const src = values.wallet === "CARD" ? cardBalance : cashBalance;
       if (amount > src) {
         message.warning(
-          `Insufficient ${values.wallet === "CARD" ? "Mana" : "HP"}. Available: ${formatGold(src)}`,
+          `Անբավարար ${values.wallet === "CARD" ? "Մանա" : "Կենս."}. Հասանելի՝ ${formatGold(src)}`,
         );
       }
     }
@@ -1010,7 +1230,7 @@ function TransactionDrawer({ open, onClose }: { open: boolean; onClose: () => vo
       const src = values.wallet === "CARD" ? cardBalance : cashBalance;
       if (amount > src) {
         message.warning(
-          `Low ${values.wallet === "CARD" ? "Mana" : "HP"}: this drops below zero.`,
+          `Ցածր ${values.wallet === "CARD" ? "Մանա" : "Կենս."}. Մնացորդը կիջնի զրոյից ցածր։`,
         );
       }
     }
@@ -1019,16 +1239,16 @@ function TransactionDrawer({ open, onClose }: { open: boolean; onClose: () => vo
       amount,
       wallet: values.wallet,
       toWallet: values.type === "TRANSFER" ? values.toWallet : undefined,
-      category: values.type === "TRANSFER" ? "Wallet Transfer" : values.category,
+      category: values.type === "TRANSFER" ? "Դրամապանակների փոխանցում" : values.category,
       note: values.note?.trim() || undefined,
     });
     message.success({
       content:
         values.type === "INCOME"
-          ? "Gold acquired!"
+          ? "Ոսկի ձեռք բերվեց!"
           : values.type === "EXPENSE"
-          ? "Gold spent."
-          : "Gold transferred.",
+          ? "Ոսկի ծախսվեց։"
+          : "Ոսկի փոխանցվեց։",
       duration: 1.4,
     });
     onClose();
@@ -1041,7 +1261,7 @@ function TransactionDrawer({ open, onClose }: { open: boolean; onClose: () => vo
       placement="bottom"
       height="auto"
       closable
-      title="NEW QUEST ENTRY"
+      title="ՆՈՐ ՔՎԵՍՏ ԳՐԱՌՈՒՄ"
       styles={{
         body: { background: COLORS.panel, paddingTop: 14 },
         wrapper: { maxWidth: 430, margin: "0 auto", borderRadius: "20px 20px 0 0", overflow: "hidden" },
@@ -1058,13 +1278,13 @@ function TransactionDrawer({ open, onClose }: { open: boolean; onClose: () => vo
           category: CATEGORIES.EXPENSE[0],
         }}
       >
-        <Form.Item name="type" label="Action">
+        <Form.Item name="type" label="Գործողություն">
           <Segmented
             block
             options={[
-              { label: "Expense", value: "EXPENSE" },
-              { label: "Income", value: "INCOME" },
-              { label: "Transfer", value: "TRANSFER" },
+              { label: "Ծախս", value: "EXPENSE" },
+              { label: "Եկամուտ", value: "INCOME" },
+              { label: "Փոխանցում", value: "TRANSFER" },
             ]}
             onChange={(v) => onTypeChange(v as TxType)}
           />
@@ -1072,8 +1292,8 @@ function TransactionDrawer({ open, onClose }: { open: boolean; onClose: () => vo
 
         <Form.Item
           name="amount"
-          label="Gold Amount (֏)"
-          rules={[{ required: true, message: "Amount required" }]}
+          label="Ոսկու չափ (֏)"
+          rules={[{ required: true, message: "Գումարը պարտադիր է" }]}
         >
           <InputNumber
             min={1}
@@ -1088,31 +1308,31 @@ function TransactionDrawer({ open, onClose }: { open: boolean; onClose: () => vo
           />
         </Form.Item>
 
-        <Form.Item name="wallet" label={type === "TRANSFER" ? "From Wallet" : "Wallet"}>
+        <Form.Item name="wallet" label={type === "TRANSFER" ? "Աղբյուր դրամապանակ" : "Դրամապանակ"}>
           <Segmented
             block
             options={[
-              { label: "Mana (Card)", value: "CARD" },
-              { label: "HP (Cash)", value: "CASH" },
+              { label: "Մանա (Քարտ)", value: "CARD" },
+              { label: "Կենս. (Կանխիկ)", value: "CASH" },
             ]}
             onChange={(v) => onWalletChange(v as Wallet)}
           />
         </Form.Item>
 
         {type === "TRANSFER" && (
-          <Form.Item name="toWallet" label="To Wallet">
+          <Form.Item name="toWallet" label="Նպատակային դրամապանակ">
             <Segmented
               block
               options={[
-                { label: "Mana (Card)", value: "CARD", disabled: wallet === "CARD" },
-                { label: "HP (Cash)", value: "CASH", disabled: wallet === "CASH" },
+                { label: "Մանա (Քարտ)", value: "CARD", disabled: wallet === "CARD" },
+                { label: "Կենս. (Կանխիկ)", value: "CASH", disabled: wallet === "CASH" },
               ]}
             />
           </Form.Item>
         )}
 
         {type !== "TRANSFER" && (
-          <Form.Item name="category" label="Quest Type">
+          <Form.Item name="category" label="Քվեստի տեսակ">
             <Select
               size="large"
               options={CATEGORIES[type].map((c) => ({ label: c, value: c }))}
@@ -1120,13 +1340,13 @@ function TransactionDrawer({ open, onClose }: { open: boolean; onClose: () => vo
           </Form.Item>
         )}
 
-        <Form.Item name="note" label="Scroll Note (optional)">
-          <Input size="large" placeholder="e.g. Mana potion refill" maxLength={80} />
+        <Form.Item name="note" label="Մագաղաթի նշում (ոչ պարտադիր)">
+          <Input size="large" placeholder="օր.՝ Մանա խմիչքի լիցքավորում" maxLength={80} />
         </Form.Item>
 
         <div style={{ display: "flex", gap: 10, marginTop: 6 }}>
           <Button block size="large" onClick={onClose}>
-            Cancel
+            Չեղարկել
           </Button>
           <Button
             block
@@ -1150,7 +1370,7 @@ function TransactionDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                   : `0 0 18px ${COLORS.transfer}66`,
             }}
           >
-            {type === "INCOME" ? "Claim Gold" : type === "EXPENSE" ? "Spend Gold" : "Transfer Gold"}
+            {type === "INCOME" ? "Ստանալ Ոսկի" : type === "EXPENSE" ? "Ծախսել Ոսկի" : "Փոխանցել Ոսկի"}
           </Button>
         </div>
       </Form>
