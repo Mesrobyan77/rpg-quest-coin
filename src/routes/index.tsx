@@ -846,9 +846,9 @@ function LevelCard() {
           }}
         >
           <span>
-            XP {formatAmount(goldIntoLevel)} / {formatAmount(LEVEL_UNIT)}
+            ՓՈՐՁ {formatAmount(goldIntoLevel)} / {formatAmount(LEVEL_UNIT)}
           </span>
-          <span>{formatAmount(goldToNext)} ֏ to LVL {level + 1}</span>
+          <span>{formatAmount(goldToNext)} ֏ մինչև ՄԱԿ. {level + 1}</span>
         </div>
       </div>
     </motion.div>
