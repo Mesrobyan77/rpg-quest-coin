@@ -816,7 +816,7 @@ function LevelCard() {
           </div>
         </div>
         <div style={{ textAlign: "right" }}>
-          <div style={{ fontSize: 11, color: COLORS.sub, letterSpacing: "0.18em" }}>LEVEL</div>
+          <div style={{ fontSize: 11, color: COLORS.sub, letterSpacing: "0.18em" }}>ՄԱԿԱՐԴԱԿ</div>
           <div
             className="gk-display gk-glow-gold"
             style={{ fontSize: 32, color: COLORS.gold, fontWeight: 900 }}
