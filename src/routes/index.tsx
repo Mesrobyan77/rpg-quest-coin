@@ -282,8 +282,8 @@ const dayLabel = (ts: number) => {
   const today = new Date();
   const yest = new Date();
   yest.setDate(today.getDate() - 1);
-  if (d.toDateString() === today.toDateString()) return "Today";
-  if (d.toDateString() === yest.toDateString()) return "Yesterday";
+  if (d.toDateString() === today.toDateString()) return "Այսօր";
+  if (d.toDateString() === yest.toDateString()) return "Երեկ";
   return d.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
 };
 
