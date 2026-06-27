@@ -1048,10 +1048,10 @@ function TxRow({ tx }: { tx: Transaction }) {
   const sign = tx.type === "INCOME" ? "+" : tx.type === "EXPENSE" ? "-" : "⇄";
   const label =
     tx.type === "TRANSFER"
-      ? `${tx.wallet === "CARD" ? "Mana" : "HP"} → ${tx.toWallet === "CARD" ? "Mana" : "HP"}`
+      ? `${tx.wallet === "CARD" ? "Մանա" : "Կենս."} → ${tx.toWallet === "CARD" ? "Մանա" : "Կենս."}`
       : tx.wallet === "CARD"
-      ? "Mana Wallet"
-      : "HP Wallet";
+      ? "Մանա դրամապանակ"
+      : "Կենս. դրամապանակ";
 
   return (
     <motion.div
