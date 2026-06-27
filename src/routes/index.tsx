@@ -982,10 +982,10 @@ function QuestLog() {
           className="gk-display"
           style={{ color: COLORS.gold, fontSize: 13, letterSpacing: "0.18em" }}
         >
-          QUEST LOG
+          ՔՎԵՍՏԵՐԻ ՄԱՏՅԱՆ
         </div>
         <div style={{ fontSize: 11, color: COLORS.sub, letterSpacing: "0.12em" }}>
-          {transactions.length} ENTRIES
+          {transactions.length} ԳՐԱՌՈՒՄ
         </div>
       </div>
 
