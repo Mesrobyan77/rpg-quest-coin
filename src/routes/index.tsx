@@ -1346,7 +1346,7 @@ function TransactionDrawer({ open, onClose }: { open: boolean; onClose: () => vo
 
         <div style={{ display: "flex", gap: 10, marginTop: 6 }}>
           <Button block size="large" onClick={onClose}>
-            Cancel
+            Չեղարկել
           </Button>
           <Button
             block
@@ -1370,7 +1370,7 @@ function TransactionDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                   : `0 0 18px ${COLORS.transfer}66`,
             }}
           >
-            {type === "INCOME" ? "Claim Gold" : type === "EXPENSE" ? "Spend Gold" : "Transfer Gold"}
+            {type === "INCOME" ? "Ստանալ Ոսկի" : type === "EXPENSE" ? "Ծախսել Ոսկի" : "Փոխանցել Ոսկի"}
           </Button>
         </div>
       </Form>
