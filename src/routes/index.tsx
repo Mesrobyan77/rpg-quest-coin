@@ -16,17 +16,15 @@ import {
   message,
   Tag,
 } from "antd";
-import {
-  PlusOutlined,
-  ThunderboltFilled,
-  HeartFilled,
-  TrophyFilled,
-  DeleteOutlined,
-  SwapOutlined,
-  FireFilled,
-  RiseOutlined,
-  FallOutlined,
-} from "@ant-design/icons";
+import PlusOutlined from "@ant-design/icons/PlusOutlined";
+import ThunderboltFilled from "@ant-design/icons/ThunderboltFilled";
+import HeartFilled from "@ant-design/icons/HeartFilled";
+import TrophyFilled from "@ant-design/icons/TrophyFilled";
+import DeleteOutlined from "@ant-design/icons/DeleteOutlined";
+import SwapOutlined from "@ant-design/icons/SwapOutlined";
+import FireFilled from "@ant-design/icons/FireFilled";
+import RiseOutlined from "@ant-design/icons/RiseOutlined";
+import FallOutlined from "@ant-design/icons/FallOutlined";
 import { motion, AnimatePresence } from "framer-motion";
 
 export const Route = createFileRoute("/")({
