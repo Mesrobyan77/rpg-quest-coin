@@ -45,17 +45,17 @@ import { motion, AnimatePresence } from "framer-motion";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "GoldKeeper — RPG ֆինանսային արկած" },
+      { title: "Գանձարան — RPG ֆինանսային արկած" },
       {
         name: "description",
         content:
-          "Խաղայնացված անձնական ֆինանսների վահանակ։ Հետևի՛ր քո Ոսկուն, կառավարի՛ր Մանա և Կենսունակություն դրամապանակները։",
+          "Խաղայնացված անձնական ֆինանսների վահանակ։ Հետևի՛ր քո Գանձին, կառավարի՛ր Մանա և Կենսունակություն դրամապանակները։",
       },
-      { property: "og:title", content: "GoldKeeper — RPG ֆինանսային արկած" },
+      { property: "og:title", content: "Գանձարան — RPG ֆինանսային արկած" },
       {
         property: "og:description",
         content:
-          "Խաղայնացված անձնական ֆինանսների վահանակ։ Հետևի՛ր քո Ոսկուն, կառավարի՛ր Մանա և Կենսունակություն դրամապանակները։",
+          "Խաղայնացված անձնական ֆինանսների վահանակ։ Հետևի՛ր քո Գանձին, կառավարի՛ր Մանա և Կենսունակություն դրամապանակները։",
       },
     ],
   }),
@@ -339,7 +339,7 @@ class AppErrorBoundary extends Component<{ children: ReactNode }, BoundaryState>
             }
             description={
               <div style={{ color: COLORS.sub, fontSize: 13, lineHeight: 1.5 }}>
-                Անսպասելի սխալ է տեղի ունեցել ինտերֆեյսում։ Քո Ոսկին ապահով է՝
+                Անսպասելի սխալ է տեղի ունեցել ինտերֆեյսում։ Քո Գանձն ապահով է՝
                 պահված տեղական հիշողության մեջ։ Փորձիր կրկին կամ վերաբեռնիր էջը։
               </div>
             }
@@ -752,7 +752,7 @@ function Header() {
         </div>
         <div>
           <div className="gk-display" style={{ fontSize: 16, color: COLORS.gold }}>
-            GOLDKEEPER
+            ԳԱՆՁԱՐԱՆ
           </div>
           <div style={{ fontSize: 10, color: COLORS.sub, letterSpacing: "0.18em" }}>
             ՖԻՆԱՆՍ · ՔՎԵՍՏ · ՄԱՏՅԱՆ
@@ -792,7 +792,7 @@ function LevelCard() {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
           <div style={{ fontSize: 11, color: COLORS.sub, letterSpacing: "0.18em" }}>
-            ԸՆԴԱՄԵՆԸ ՈՍԿԻ
+            ԸՆԴԱՄԵՆԸ ԳԱՆՁ
           </div>
           <div
             className="gk-display gk-glow-gold"
@@ -1237,10 +1237,10 @@ function TransactionDrawer({ open, onClose }: { open: boolean; onClose: () => vo
     message.success({
       content:
         values.type === "INCOME"
-          ? "Ոսկի ձեռք բերվեց!"
+          ? "Գանձը ավելացավ։"
           : values.type === "EXPENSE"
-          ? "Ոսկի ծախսվեց։"
-          : "Ոսկի փոխանցվեց։",
+          ? "Գանձ ծախսվեց։"
+          : "Գանձ փոխանցվեց։",
       duration: 1.4,
     });
     onClose();
@@ -1284,7 +1284,7 @@ function TransactionDrawer({ open, onClose }: { open: boolean; onClose: () => vo
 
         <Form.Item
           name="amount"
-          label="Ոսկու չափ (֏)"
+          label="Գումար (֏)"
           rules={[{ required: true, message: "Գումարը պարտադիր է" }]}
         >
           <InputNumber
@@ -1362,7 +1362,7 @@ function TransactionDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                   : `0 0 18px ${COLORS.transfer}66`,
             }}
           >
-            {type === "INCOME" ? "Ստանալ Ոսկի" : type === "EXPENSE" ? "Ծախսել Ոսկի" : "Փոխանցել Ոսկի"}
+            {type === "INCOME" ? "Ստանալ" : type === "EXPENSE" ? "Ծախսել" : "Փոխանցել"}
           </Button>
         </div>
       </Form>
