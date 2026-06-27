@@ -105,10 +105,19 @@ const COLORS = {
 };
 
 const CATEGORIES: Record<TxType, string[]> = {
-  INCOME: ["Quest Reward", "Loot Drop", "Daily Bounty", "Treasure Chest", "Trade Profit"],
-  EXPENSE: ["Food / Potions", "Transport / Mount", "Gear / Equipment", "Tavern / Leisure", "Spells / Subscriptions", "Healing / Health", "Misc Scroll"],
-  TRANSFER: ["Wallet Transfer"],
+  INCOME: ["Քվեստի վարձատրություն", "Ավար / Loot", "Օրական առաջադրանք", "Գանձի սնդուկ", "Առևտրի շահույթ"],
+  EXPENSE: [
+    "Սնունդ / Խմիչքներ",
+    "Տրանսպորտ / Ձի",
+    "Զրահ / Սարքավորում",
+    "Պանդոկ / Ժամանց",
+    "Կախարդանքներ / Բաժանորդագրություններ",
+    "Բուժում / Առողջություն",
+    "Այլ մագաղաթ",
+  ],
+  TRANSFER: ["Դրամապանակների փոխանցում"],
 };
+
 
 /* ============================ Storage ============================ */
 
