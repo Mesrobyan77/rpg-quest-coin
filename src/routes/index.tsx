@@ -1278,13 +1278,13 @@ function TransactionDrawer({ open, onClose }: { open: boolean; onClose: () => vo
           category: CATEGORIES.EXPENSE[0],
         }}
       >
-        <Form.Item name="type" label="Action">
+        <Form.Item name="type" label="Գործողություն">
           <Segmented
             block
             options={[
-              { label: "Expense", value: "EXPENSE" },
-              { label: "Income", value: "INCOME" },
-              { label: "Transfer", value: "TRANSFER" },
+              { label: "Ծախս", value: "EXPENSE" },
+              { label: "Եկամուտ", value: "INCOME" },
+              { label: "Փոխանցում", value: "TRANSFER" },
             ]}
             onChange={(v) => onTypeChange(v as TxType)}
           />
@@ -1292,8 +1292,8 @@ function TransactionDrawer({ open, onClose }: { open: boolean; onClose: () => vo
 
         <Form.Item
           name="amount"
-          label="Gold Amount (֏)"
-          rules={[{ required: true, message: "Amount required" }]}
+          label="Ոսկու չափ (֏)"
+          rules={[{ required: true, message: "Գումարը պարտադիր է" }]}
         >
           <InputNumber
             min={1}
