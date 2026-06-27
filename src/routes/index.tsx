@@ -721,7 +721,7 @@ function Dashboard() {
           onClick={() => setOpen(true)}
           style={{ height: 56, borderRadius: 999, padding: "0 26px", fontSize: 16 }}
         >
-          New Quest Entry
+          Նոր քվեստ գրանցել
         </Button>
       </motion.div>
 
