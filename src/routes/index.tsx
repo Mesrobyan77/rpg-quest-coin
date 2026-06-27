@@ -800,7 +800,7 @@ function LevelCard() {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
           <div style={{ fontSize: 11, color: COLORS.sub, letterSpacing: "0.18em" }}>
-            TOTAL GOLD
+            ԸՆԴԱՄԵՆԸ ՈՍԿԻ
           </div>
           <div
             className="gk-display gk-glow-gold"
