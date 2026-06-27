@@ -1,3 +1,1 @@
-[build]
-  command = " npm run build\
- publish = \dist\
+[build]\n  command = " npm run build\\n publish = \dist\
