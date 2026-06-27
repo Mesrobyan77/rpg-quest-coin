@@ -1211,18 +1211,18 @@ function TransactionDrawer({ open, onClose }: { open: boolean; onClose: () => vo
   const handleSubmit = (values: FormShape) => {
     const amount = Number(values.amount);
     if (!amount || amount <= 0) {
-      message.error("Enter a valid amount, hero.");
+      message.error("Մուտքագրի՛ր վավեր գումար, հերոս։");
       return;
     }
     if (values.type === "TRANSFER") {
       if (values.wallet === values.toWallet) {
-        message.error("Source and destination wallets must differ.");
+        message.error("Աղբյուր և նպատակային դրամապանակները պետք է տարբեր լինեն։");
         return;
       }
       const src = values.wallet === "CARD" ? cardBalance : cashBalance;
       if (amount > src) {
         message.warning(
-          `Insufficient ${values.wallet === "CARD" ? "Mana" : "HP"}. Available: ${formatGold(src)}`,
+          `Անբավարար ${values.wallet === "CARD" ? "Մանա" : "Կենս."}. Հասանելի՝ ${formatGold(src)}`,
         );
       }
     }
@@ -1230,7 +1230,7 @@ function TransactionDrawer({ open, onClose }: { open: boolean; onClose: () => vo
       const src = values.wallet === "CARD" ? cardBalance : cashBalance;
       if (amount > src) {
         message.warning(
-          `Low ${values.wallet === "CARD" ? "Mana" : "HP"}: this drops below zero.`,
+          `Ցածր ${values.wallet === "CARD" ? "Մանա" : "Կենս."}. Մնացորդը կիջնի զրոյից ցածր։`,
         );
       }
     }
@@ -1239,16 +1239,16 @@ function TransactionDrawer({ open, onClose }: { open: boolean; onClose: () => vo
       amount,
       wallet: values.wallet,
       toWallet: values.type === "TRANSFER" ? values.toWallet : undefined,
-      category: values.type === "TRANSFER" ? "Wallet Transfer" : values.category,
+      category: values.type === "TRANSFER" ? "Դրամապանակների փոխանցում" : values.category,
       note: values.note?.trim() || undefined,
     });
     message.success({
       content:
         values.type === "INCOME"
-          ? "Gold acquired!"
+          ? "Ոսկի ձեռք բերվեց!"
           : values.type === "EXPENSE"
-          ? "Gold spent."
-          : "Gold transferred.",
+          ? "Ոսկի ծախսվեց։"
+          : "Ոսկի փոխանցվեց։",
       duration: 1.4,
     });
     onClose();
