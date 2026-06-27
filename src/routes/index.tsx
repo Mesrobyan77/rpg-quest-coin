@@ -21,13 +21,14 @@ import {
   Segmented,
   Select,
   Input,
-  Empty,
   Popconfirm,
   message,
   Tag,
   Alert,
   Modal,
+  Radio,
   Descriptions,
+  Empty,
 } from "antd";
 import {
   PlusOutlined,
@@ -41,9 +42,9 @@ import {
   FallOutlined,
   WarningFilled,
   ReloadOutlined,
+  FilterOutlined,
 } from "@ant-design/icons";
 import { motion, AnimatePresence } from "framer-motion";
-import { formatDate } from "date-fns";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -74,8 +75,8 @@ interface Transaction {
   id: string;
   type: TxType;
   amount: number;
-  wallet: Wallet; // source wallet for EXPENSE/TRANSFER, target for INCOME
-  toWallet?: Wallet; // only for TRANSFER
+  wallet: Wallet;
+  toWallet?: Wallet;
   category: string;
   note?: string;
   createdAt: number;
@@ -144,7 +145,7 @@ interface VaultCtx {
   cashBalance: number;
   netWorth: number;
   level: number;
-  levelProgress: number; // 0..100
+  levelProgress: number;
   goldIntoLevel: number;
   goldToNext: number;
   addTransaction: (t: Omit<Transaction, "id" | "createdAt">) => void;
@@ -265,11 +266,6 @@ const formatAmount = (n: number) =>
 
 const formatGold = (n: number) => `${formatAmount(n)} ֏`;
 
-const dayKey = (ts: number) => {
-  const d = new Date(ts);
-  return d.toDateString();
-};
-
 const dayLabel = (ts: number) => {
   const d = new Date(ts);
   const today = new Date();
@@ -283,7 +279,7 @@ const dayLabel = (ts: number) => {
 const timeLabel = (ts: number) =>
   new Date(ts).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
 
-/* ============================ Root + Error Boundary ============================ */
+/* ============================ Error Boundary ============================ */
 
 interface BoundaryState {
   error: Error | null;
@@ -299,12 +295,10 @@ class AppErrorBoundary extends Component<{ children: ReactNode }, BoundaryState>
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     this.setState({ error, info });
-    // eslint-disable-next-line no-console
     console.error("[GoldKeeper] Top-level boundary caught:", error, info);
   }
 
   reset = () => this.setState({ error: null, info: null });
-
   reload = () => {
     if (typeof window !== "undefined") window.location.reload();
   };
@@ -412,11 +406,7 @@ function InlineErrorBanner({ error, onDismiss }: InlineErrorBannerProps) {
           </span>
         }
         description={<span style={{ color: COLORS.sub, fontSize: 12 }}>{error.message}</span>}
-        style={{
-          background: "#1a0e10",
-          border: `1px solid ${COLORS.danger}55`,
-          borderRadius: 12,
-        }}
+        style={{ background: "#1a0e10", border: `1px solid ${COLORS.danger}55`, borderRadius: 12 }}
       />
     </motion.div>
   );
@@ -512,7 +502,8 @@ function StyleInjector() {
   return (
     <style>{`
       @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;500;600;700&display=swap');
-      html, body, #app { background: ${COLORS.bg}; }
+      *, *::before, *::after { box-sizing: border-box; }
+      html, body, #app { background: ${COLORS.bg}; margin: 0; padding: 0; }
       body { margin: 0; color: ${COLORS.text}; -webkit-font-smoothing: antialiased; }
       .gk-display { font-family: 'Orbitron', 'Rajdhani', sans-serif; letter-spacing: 0.02em; }
       .gk-glow-gold  { text-shadow: 0 0 10px ${COLORS.gold}66, 0 0 22px ${COLORS.gold}33; }
@@ -544,11 +535,6 @@ function StyleInjector() {
         box-shadow: 0 0 24px ${COLORS.gold}88, 0 8px 24px rgba(0,0,0,0.5) !important;
         border: none !important;
       }
-      .gk-chip {
-        display: inline-flex; align-items: center; gap: 6px;
-        padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 700;
-        text-transform: uppercase; letter-spacing: 0.08em;
-      }
       .gk-tx-row { border: 1px solid ${COLORS.border}; border-radius: 14px; background: #18181d; }
       .gk-tx-row:hover { border-color: #3a3a45; }
       .gk-divider-glow {
@@ -561,6 +547,15 @@ function StyleInjector() {
       .ant-form-item-label > label { color: ${COLORS.sub} !important; text-transform: uppercase; font-size: 11px !important; letter-spacing: 0.12em; }
       .ant-select-selector, .ant-input-number, .ant-input-affix-wrapper, .ant-input {
         background: #0d0d11 !important; border-color: ${COLORS.border} !important;
+      }
+      .gk-tx-container::-webkit-scrollbar { width: 4px; }
+      .gk-tx-container::-webkit-scrollbar-track { background: transparent; }
+      .gk-tx-container::-webkit-scrollbar-thumb { background: rgba(255,217,0,0.2); border-radius: 10px; }
+      .gk-tx-container { scrollbar-width: thin; scrollbar-color: rgba(255,217,0,0.2) transparent; }
+      /* Mobile-first responsive tweaks */
+      @media (max-width: 400px) {
+        .gk-level-amount { font-size: 26px !important; }
+        .gk-wallet-amount { font-size: 16px !important; }
       }
     `}</style>
   );
@@ -579,7 +574,7 @@ function BackdropFrame({ children }: { children: React.ReactNode }) {
           `radial-gradient(800px 400px at 20% 110%, #0b1f1d 0%, transparent 60%)`,
         display: "flex",
         justifyContent: "center",
-        padding: "0",
+        padding: 0,
       }}
     >
       <div
@@ -628,7 +623,7 @@ function FloatLayer() {
               position: "absolute",
               fontFamily: "'Orbitron', sans-serif",
               fontWeight: 900,
-              fontSize: 44,
+              fontSize: 40,
               letterSpacing: "0.04em",
               color:
                 f.kind === "damage"
@@ -683,7 +678,7 @@ function Dashboard() {
   }
 
   return (
-    <div style={{ paddingBottom: 120 }}>
+    <div>
       <Header />
       <div style={{ padding: "0 16px" }}>
         <LevelCard />
@@ -693,15 +688,14 @@ function Dashboard() {
         <QuestLog />
       </div>
 
+      {/* FAB — sticky add button */}
       <motion.div
         whileTap={{ scale: 0.92 }}
         whileHover={{ scale: 1.04 }}
         style={{
-          position: "sticky",
-          bottom: 20,
-          marginTop: 24,
-          marginLeft: "auto",
-          marginRight: 4,
+          position: "fixed",
+          bottom: 24,
+          right: "calc(50% - 215px + 12px)",
           width: 64,
           zIndex: 50,
         }}
@@ -723,7 +717,7 @@ function Dashboard() {
             justifyContent: "center",
           }}
         >
-          +
+          <PlusOutlined />
         </Button>
       </motion.div>
 
@@ -756,6 +750,7 @@ function Header() {
             placeItems: "center",
             color: "#141414",
             boxShadow: `0 0 18px ${COLORS.gold}66`,
+            flexShrink: 0,
           }}
         >
           <FireFilled style={{ fontSize: 20 }} />
@@ -778,6 +773,7 @@ function Header() {
           padding: "4px 10px",
           borderRadius: 999,
           fontSize: 12,
+          flexShrink: 0,
         }}
       >
         ՄԱԿ. {level}
@@ -786,7 +782,7 @@ function Header() {
   );
 }
 
-/* ============================ Level / Gold Card ============================ */
+/* ============================ Level Card ============================ */
 
 function LevelCard() {
   const { netWorth, level, levelProgress, goldIntoLevel, goldToNext } = useVault();
@@ -805,7 +801,7 @@ function LevelCard() {
             ԸՆԴԱՄԵՆԸ ԳԱՆՁ
           </div>
           <div
-            className="gk-display gk-glow-gold"
+            className="gk-display gk-glow-gold gk-level-amount"
             style={{
               fontSize: 34,
               color: COLORS.gold,
@@ -910,35 +906,29 @@ function WalletCard(props: {
       className="gk-panel"
       style={{ padding: 14, position: "relative", overflow: "hidden" }}
     >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          color: props.color,
-        }}
-      >
+      <div style={{ display: "flex", alignItems: "center", gap: 6, color: props.color }}>
         <span style={{ fontSize: 16 }}>{props.icon}</span>
         <span
           className="gk-display"
-          style={{ fontSize: 12, letterSpacing: "0.16em", fontWeight: 700 }}
+          style={{ fontSize: 11, letterSpacing: "0.14em", fontWeight: 700 }}
         >
           {props.title}
         </span>
       </div>
       <div
-        className={`gk-display ${props.glow}`}
+        className={`gk-display gk-wallet-amount ${props.glow}`}
         style={{
           color: negative ? COLORS.danger : props.color,
-          fontSize: 20,
+          fontSize: 19,
           fontWeight: 800,
           marginTop: 6,
           lineHeight: 1.1,
+          wordBreak: "break-all",
         }}
       >
         {formatGold(props.amount)}
       </div>
-      <div style={{ fontSize: 10, color: COLORS.sub, marginTop: 2, letterSpacing: "0.12em" }}>
+      <div style={{ fontSize: 10, color: COLORS.sub, marginTop: 2, letterSpacing: "0.10em" }}>
         {props.subtitle.toUpperCase()}
       </div>
       <div style={{ marginTop: 10 }}>
@@ -954,141 +944,473 @@ function WalletCard(props: {
   );
 }
 
+/* ============================ Filter State ============================ */
+
+interface FilterState {
+  type: "ALL" | "INCOME" | "EXPENSE" | "TRANSFER";
+  dateRange: "ALL" | "7" | "15" | "30" | "CUSTOM";
+  customStart?: string;
+  customEnd?: string;
+}
+
+const DEFAULT_FILTERS: FilterState = { type: "ALL", dateRange: "ALL" };
+
 /* ============================ Quest Log ============================ */
 
 function QuestLog() {
   const { transactions } = useVault();
-  const [modalVisible, setModalVisible] = useState(false);
-  const [modalData, setModalData] = useState<Transaction | null>(null);
 
+  // ── Filter modal state ──
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
+
+  // ── Detail modal state ──
+  const [detailTx, setDetailTx] = useState<Transaction | null>(null);
+
+  // ── Active filter count badge ──
+  const activeCount = (filters.type !== "ALL" ? 1 : 0) + (filters.dateRange !== "ALL" ? 1 : 0);
+
+  // ── Filtering ──
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter((tx) => {
+      if (filters.type !== "ALL" && tx.type !== filters.type) return false;
+
+      if (filters.dateRange !== "ALL") {
+        const txDate = new Date(tx.createdAt);
+        const now = new Date();
+
+        if (filters.dateRange === "7" || filters.dateRange === "15" || filters.dateRange === "30") {
+          const daysAgo = new Date();
+          daysAgo.setDate(now.getDate() - parseInt(filters.dateRange));
+          daysAgo.setHours(0, 0, 0, 0);
+          if (txDate < daysAgo) return false;
+        } else if (filters.dateRange === "CUSTOM") {
+          if (filters.customStart) {
+            const start = new Date(filters.customStart);
+            start.setHours(0, 0, 0, 0);
+            if (txDate < start) return false;
+          }
+          if (filters.customEnd) {
+            const end = new Date(filters.customEnd);
+            end.setHours(23, 59, 59, 999);
+            if (txDate > end) return false;
+          }
+        }
+      }
+
+      return true;
+    });
+  }, [transactions, filters]);
+
+  // ── Group by day ──
   const grouped = useMemo(() => {
-    const map = new Map<string, Transaction[]>();
-    for (const t of transactions) {
-      const key = dayKey(t.createdAt);
-      const arr = map.get(key) ?? [];
-      arr.push(t);
-      map.set(key, arr);
+    const groups: Record<string, Transaction[]> = {};
+    for (const tx of filteredTransactions) {
+      const key = new Date(tx.createdAt).toDateString();
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(tx);
     }
-    return Array.from(map.entries()).sort(
-      (a, b) => (b[1][0]?.createdAt ?? 0) - (a[1][0]?.createdAt ?? 0),
-    );
-  }, [transactions]);
+    // Sort groups descending by date
+    return Object.entries(groups).sort(([a], [b]) => new Date(b).getTime() - new Date(a).getTime());
+  }, [filteredTransactions]);
 
   return (
     <div>
+      {/* ── Section header + filter button ── */}
       <div
         style={{
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          marginBottom: 10,
+          marginBottom: 14,
         }}
       >
         <div
           className="gk-display"
-          style={{ color: COLORS.gold, fontSize: 13, letterSpacing: "0.18em" }}
+          style={{ fontSize: 12, color: COLORS.sub, letterSpacing: "0.18em" }}
         >
-          ՔՎԵՍՏԵՐԻ ՄԱՏՅԱՆ
+          ՔՎԵՍՏԻ ՄԱՏՅԱՆ
         </div>
-        <div style={{ fontSize: 11, color: COLORS.sub, letterSpacing: "0.12em" }}>
-          {transactions.length} ԳՐԱՌՈՒՄ
-        </div>
+        <Button
+          size="small"
+          icon={<FilterOutlined />}
+          onClick={() => setIsFilterOpen(true)}
+          style={{
+            background: activeCount > 0 ? `${COLORS.gold}22` : "rgba(255,255,255,0.05)",
+            border: `1px solid ${activeCount > 0 ? COLORS.gold + "55" : COLORS.border}`,
+            color: activeCount > 0 ? COLORS.gold : COLORS.text,
+            borderRadius: 999,
+            fontWeight: 600,
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+          }}
+        >
+          Ֆիլտր{activeCount > 0 ? ` (${activeCount})` : ""}
+        </Button>
       </div>
 
-      {transactions.length === 0 ? (
-        <div className="gk-panel" style={{ padding: 28, textAlign: "center" }}>
+      {/* ── Transaction list (scrollable) ── */}
+      <div
+        className="gk-tx-container"
+        style={{
+          maxHeight: "calc(100vh - 480px)",
+          minHeight: 120,
+          overflowY: "auto",
+          overflowX: "hidden",
+          paddingRight: 2,
+          /* subtle inset shadow to hint scrollability */
+          WebkitMaskImage:
+            grouped.length > 0
+              ? "linear-gradient(to bottom, black calc(100% - 32px), transparent 100%)"
+              : undefined,
+          maskImage:
+            grouped.length > 0
+              ? "linear-gradient(to bottom, black calc(100% - 32px), transparent 100%)"
+              : undefined,
+        }}
+      >
+        {grouped.length === 0 ? (
           <Empty
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
             description={
-              <span style={{ color: COLORS.sub }}>
-                Դեռ քվեստեր չկան։ Սկսի՛ր քո ճանապարհորդությունը, հերոս։
+              <span style={{ color: COLORS.sub, fontSize: 13 }}>
+                {transactions.length === 0
+                  ? "Դեռ գործարքներ չկան։ Սկսի՛ր ճամփորդությունդ։"
+                  : "Ֆիլտրին համապատասխան գործարք չի գտնվել։"}
               </span>
             }
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            style={{ margin: "40px 0" }}
           />
-        </div>
-      ) : (
-        grouped.map(([key, items]) => (
-          <div
-            key={key}
-            style={{ marginBottom: 18, cursor: "pointer" }}
-            onClick={() => {
-              setModalData(items[0]);
-              setModalVisible(true);
+        ) : (
+          grouped.map(([dateKey, items]) => (
+            <div key={dateKey} style={{ marginBottom: 20 }}>
+              {/* Day label */}
+              <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "0 2px 10px" }}>
+                <span
+                  className="gk-display"
+                  style={{
+                    fontSize: 11,
+                    color: COLORS.gold,
+                    letterSpacing: "0.18em",
+                    fontWeight: 700,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {dayLabel(items[0].createdAt)}
+                </span>
+                <div className="gk-divider-glow" style={{ flex: 1 }} />
+                <span style={{ fontSize: 10, color: COLORS.sub, whiteSpace: "nowrap" }}>
+                  {items.length} գործարք
+                </span>
+              </div>
+
+              {/* Rows */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <AnimatePresence initial={false}>
+                  {items.map((t) => (
+                    <TxRow key={t.id} tx={t} onDetail={() => setDetailTx(t)} />
+                  ))}
+                </AnimatePresence>
+              </div>
+            </div>
+          ))
+        )}
+        {/* bottom padding so last row isn't clipped by fade */}
+        {grouped.length > 0 && <div style={{ height: 40 }} />}
+      </div>
+
+      {/* ── Filter Modal (Ant Design) ── */}
+      <Modal
+        open={isFilterOpen}
+        onCancel={() => setIsFilterOpen(false)}
+        title={
+          <span
+            style={{
+              color: COLORS.gold,
+              fontFamily: "'Orbitron', sans-serif",
+              fontSize: 13,
+              letterSpacing: "0.08em",
             }}
           >
+            ՖԻԼՏՐԵՐ
+          </span>
+        }
+        footer={null}
+        width={340}
+        styles={{
+          content: {
+            background: COLORS.panel,
+            border: `1px solid ${COLORS.border}`,
+            borderRadius: 18,
+          },
+          header: {
+            background: COLORS.panel,
+            borderBottom: `1px solid ${COLORS.border}`,
+            borderRadius: "18px 18px 0 0",
+          },
+          mask: { backdropFilter: "blur(4px)" },
+        }}
+      >
+        <div style={{ display: "flex", flexDirection: "column", gap: 20, paddingTop: 8 }}>
+          {/* Transaction type */}
+          <div>
             <div
               style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                margin: "8px 2px 10px",
+                fontSize: 11,
+                color: COLORS.sub,
+                marginBottom: 8,
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
               }}
             >
-              <span
-                style={{
-                  fontSize: 11,
-                  color: COLORS.gold,
-                  letterSpacing: "0.18em",
-                  fontWeight: 700,
-                }}
-                className="gk-display"
-              >
-                {dayLabel(items[0].createdAt)}
-              </span>
-              <div className="gk-divider-glow" style={{ flex: 1 }} />
+              Գործարքի Տեսակ
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <AnimatePresence initial={false}>
-                {items.map((t) => (
-                  <TxRow key={t.id} tx={t} />
-                ))}
-              </AnimatePresence>
-            </div>
-          </div>
-        ))
-      )}
-
-      <Modal
-        title={`${modalData?.type === "EXPENSE" ? "🔴 Expense" : "🟢 Income"} Details`}
-        open={modalVisible}
-        onOk={() => setModalVisible(false)}
-        onCancel={() => setModalVisible(false)}
-        destroyOnHidden
-      >
-        <Descriptions bordered column={1} size="small" style={{ marginTop: 16 }}>
-          <Descriptions.Item label="Amount">
-            <span
-              style={{ fontWeight: "bold", color: modalData?.type === "EXPENSE" ? "#cf1322" : "#3f8600" }}
+            <Radio.Group
+              value={filters.type}
+              onChange={(e) => setFilters((prev) => ({ ...prev, type: e.target.value }))}
+              buttonStyle="solid"
+              style={{ width: "100%", display: "grid", gridTemplateColumns: "repeat(4, 1fr)" }}
             >
-              ${modalData?.amount}
-            </span>
-          </Descriptions.Item>
+              {(["ALL", "INCOME", "EXPENSE", "TRANSFER"] as const).map((v) => (
+                <Radio.Button
+                  key={v}
+                  value={v}
+                  style={{ textAlign: "center", fontSize: 11, padding: "0 4px" }}
+                >
+                  {v === "ALL"
+                    ? "Բոլոր"
+                    : v === "INCOME"
+                      ? "Եկամ."
+                      : v === "EXPENSE"
+                        ? "Ծախս"
+                        : "Փոխ."}
+                </Radio.Button>
+              ))}
+            </Radio.Group>
+          </div>
 
-          <Descriptions.Item label="Wallet">
-            <Tag color="blue">{modalData?.wallet}</Tag>
-          </Descriptions.Item>
+          {/* Date range */}
+          <div>
+            <div
+              style={{
+                fontSize: 11,
+                color: COLORS.sub,
+                marginBottom: 8,
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+              }}
+            >
+              Ժամանակահատված
+            </div>
+            <Select
+              style={{ width: "100%" }}
+              value={filters.dateRange}
+              onChange={(value) => setFilters((prev) => ({ ...prev, dateRange: value }))}
+              options={[
+                { value: "ALL", label: "Ամբողջ պատմությունը" },
+                { value: "7", label: "Վերջին 7 օր" },
+                { value: "15", label: "Վերջին 15 օր" },
+                { value: "30", label: "Վերջին 30 օր" },
+                { value: "CUSTOM", label: "Ընտրել միջակայք…" },
+              ]}
+            />
+          </div>
 
-          <Descriptions.Item label="Category">{modalData?.category}</Descriptions.Item>
+          {/* Custom date range */}
+          {filters.dateRange === "CUSTOM" && (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <div>
+                <div
+                  style={{
+                    fontSize: 10,
+                    color: COLORS.sub,
+                    marginBottom: 4,
+                    letterSpacing: "0.1em",
+                  }}
+                >
+                  ՍԿԻԶԲ
+                </div>
+                <input
+                  type="date"
+                  value={filters.customStart || ""}
+                  onChange={(e) => setFilters((prev) => ({ ...prev, customStart: e.target.value }))}
+                  style={{
+                    width: "100%",
+                    padding: "8px 10px",
+                    borderRadius: 8,
+                    border: `1px solid ${COLORS.border}`,
+                    background: "#0d0d11",
+                    color: COLORS.text,
+                    fontSize: 13,
+                    outline: "none",
+                  }}
+                />
+              </div>
+              <div>
+                <div
+                  style={{
+                    fontSize: 10,
+                    color: COLORS.sub,
+                    marginBottom: 4,
+                    letterSpacing: "0.1em",
+                  }}
+                >
+                  ԱՎԱՐՏ
+                </div>
+                <input
+                  type="date"
+                  value={filters.customEnd || ""}
+                  onChange={(e) => setFilters((prev) => ({ ...prev, customEnd: e.target.value }))}
+                  style={{
+                    width: "100%",
+                    padding: "8px 10px",
+                    borderRadius: 8,
+                    border: `1px solid ${COLORS.border}`,
+                    background: "#0d0d11",
+                    color: COLORS.text,
+                    fontSize: 13,
+                    outline: "none",
+                  }}
+                />
+              </div>
+            </div>
+          )}
 
-          {modalData?.note && <Descriptions.Item label="Note">{modalData?.note}</Descriptions.Item>}
+          {/* Actions */}
+          <div style={{ display: "flex", gap: 10 }}>
+            <Button
+              block
+              onClick={() => setFilters(DEFAULT_FILTERS)}
+              style={{ borderColor: COLORS.border, color: COLORS.sub }}
+            >
+              Մաքրել
+            </Button>
+            <Button
+              block
+              type="primary"
+              onClick={() => setIsFilterOpen(false)}
+              style={{
+                background: COLORS.gold,
+                borderColor: COLORS.gold,
+                color: "#141414",
+                fontWeight: 700,
+              }}
+            >
+              Կիրառել
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
-          <Descriptions.Item label="Created At">{modalData?.createdAt}</Descriptions.Item>
-
-          <Descriptions.Item label="ID">
-            <span style={{ fontSize: 12, color: "#8c8c8c" }}>{modalData?.id}</span>
-          </Descriptions.Item>
-        </Descriptions>
+      {/* ── Transaction Detail Modal ── */}
+      <Modal
+        open={!!detailTx}
+        onCancel={() => setDetailTx(null)}
+        title={
+          <span
+            style={{
+              color: COLORS.gold,
+              fontFamily: "'Orbitron', sans-serif",
+              fontSize: 13,
+              letterSpacing: "0.06em",
+            }}
+          >
+            ՔՎԵՍՏԻ ՄԱՆՐԱՄԱՍ
+          </span>
+        }
+        footer={null}
+        width={340}
+        styles={{
+          content: {
+            background: COLORS.panel,
+            border: `1px solid ${COLORS.border}`,
+            borderRadius: 18,
+          },
+          header: {
+            background: COLORS.panel,
+            borderBottom: `1px solid ${COLORS.border}`,
+            borderRadius: "18px 18px 0 0",
+          },
+          mask: { backdropFilter: "blur(4px)" },
+        }}
+      >
+        {detailTx && (
+          <Descriptions
+            column={1}
+            size="small"
+            styles={{
+              label: {
+                color: COLORS.sub,
+                fontSize: 11,
+                textTransform: "uppercase",
+                letterSpacing: "0.1em",
+              },
+              content: { color: COLORS.text, fontWeight: 600 },
+            }}
+          >
+            <Descriptions.Item label="Տեսակ">
+              <Tag
+                style={{
+                  background:
+                    detailTx.type === "INCOME"
+                      ? `${COLORS.hp}22`
+                      : detailTx.type === "EXPENSE"
+                        ? `${COLORS.danger}22`
+                        : `${COLORS.transfer}22`,
+                  border: `1px solid ${detailTx.type === "INCOME" ? COLORS.hp : detailTx.type === "EXPENSE" ? COLORS.danger : COLORS.transfer}55`,
+                  color:
+                    detailTx.type === "INCOME"
+                      ? COLORS.hp
+                      : detailTx.type === "EXPENSE"
+                        ? COLORS.danger
+                        : COLORS.transfer,
+                  borderRadius: 999,
+                }}
+              >
+                {detailTx.type === "INCOME"
+                  ? "Եկամուտ"
+                  : detailTx.type === "EXPENSE"
+                    ? "Ծախս"
+                    : "Փոխանցում"}
+              </Tag>
+            </Descriptions.Item>
+            <Descriptions.Item label="Գումար">
+              <span className="gk-display" style={{ color: COLORS.gold, fontSize: 16 }}>
+                {formatGold(detailTx.amount)}
+              </span>
+            </Descriptions.Item>
+            <Descriptions.Item label="Դրամապանակ">
+              {detailTx.wallet === "CARD" ? "Մանա (Քարտ)" : "Կենսունակություն (Կանխիկ)"}
+              {detailTx.toWallet &&
+                ` → ${detailTx.toWallet === "CARD" ? "Մանա (Քարտ)" : "Կենս. (Կանխիկ)"}`}
+            </Descriptions.Item>
+            <Descriptions.Item label="Կատեգորիա">{detailTx.category}</Descriptions.Item>
+            {detailTx.note && <Descriptions.Item label="Նշում">{detailTx.note}</Descriptions.Item>}
+            <Descriptions.Item label="Ամսաթիվ">
+              {new Date(detailTx.createdAt).toLocaleString(undefined, {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </Descriptions.Item>
+          </Descriptions>
+        )}
       </Modal>
     </div>
   );
 }
 
-function TxRow({ tx }: { tx: Transaction }) {
+/* ============================ Tx Row ============================ */
+
+function TxRow({ tx, onDetail }: { tx: Transaction; onDetail: () => void }) {
   const { removeTransaction } = useVault();
   const color =
     tx.type === "INCOME" ? COLORS.hp : tx.type === "EXPENSE" ? COLORS.danger : COLORS.transfer;
   const sign = tx.type === "INCOME" ? "+" : tx.type === "EXPENSE" ? "-" : "⇄";
-  const label =
+  const walletLabel =
     tx.type === "TRANSFER"
       ? `${tx.wallet === "CARD" ? "Մանա" : "Կենս."} → ${tx.toWallet === "CARD" ? "Մանա" : "Կենս."}`
       : tx.wallet === "CARD"
@@ -1108,10 +1430,13 @@ function TxRow({ tx }: { tx: Transaction }) {
         display: "grid",
         gridTemplateColumns: "auto 1fr auto",
         alignItems: "center",
-        gap: 12,
+        gap: 10,
         borderLeft: `3px solid ${color}`,
+        cursor: "pointer",
       }}
+      onClick={onDetail}
     >
+      {/* Icon */}
       <div
         style={{
           width: 36,
@@ -1122,6 +1447,7 @@ function TxRow({ tx }: { tx: Transaction }) {
           background: `${color}1a`,
           color,
           fontSize: 16,
+          flexShrink: 0,
         }}
       >
         {tx.type === "INCOME" ? (
@@ -1133,12 +1459,10 @@ function TxRow({ tx }: { tx: Transaction }) {
         )}
       </div>
 
+      {/* Label */}
       <div style={{ minWidth: 0 }}>
         <div
           style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
             color: COLORS.text,
             fontWeight: 600,
             fontSize: 14,
@@ -1147,9 +1471,7 @@ function TxRow({ tx }: { tx: Transaction }) {
             textOverflow: "ellipsis",
           }}
         >
-          <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
-            {tx.type === "TRANSFER" ? "Դրամապանակների փոխանցում" : tx.category}
-          </span>
+          {tx.type === "TRANSFER" ? "Դրամապանակների փոխանցում" : tx.category}
         </div>
         <div
           style={{
@@ -1162,20 +1484,19 @@ function TxRow({ tx }: { tx: Transaction }) {
             textOverflow: "ellipsis",
           }}
         >
-          {timeLabel(tx.createdAt)} · {label}
+          {timeLabel(tx.createdAt)} · {walletLabel}
           {tx.note ? ` · ${tx.note}` : ""}
         </div>
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+      {/* Amount + delete */}
+      <div
+        style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}
+        onClick={(e) => e.stopPropagation()}
+      >
         <span
           className="gk-display"
-          style={{
-            color,
-            fontWeight: 800,
-            fontSize: 14,
-            whiteSpace: "nowrap",
-          }}
+          style={{ color, fontWeight: 800, fontSize: 13, whiteSpace: "nowrap" }}
         >
           {sign}
           {formatAmount(tx.amount)} ֏
@@ -1202,7 +1523,7 @@ function TxRow({ tx }: { tx: Transaction }) {
   );
 }
 
-/* ============================ Drawer Form ============================ */
+/* ============================ Transaction Drawer ============================ */
 
 interface FormShape {
   type: TxType;
@@ -1329,7 +1650,7 @@ function TransactionDrawer({ open, onClose }: { open: boolean; onClose: () => vo
             options={[
               { label: "Ծախս", value: "EXPENSE" },
               { label: "Եկամուտ", value: "INCOME" },
-              { label: "Փոխանցում", value: "TRANSFER" },
+              { label: "Փոխ.", value: "TRANSFER" },
             ]}
             onChange={(v) => onTypeChange(v as TxType)}
           />
@@ -1358,7 +1679,7 @@ function TransactionDrawer({ open, onClose }: { open: boolean; onClose: () => vo
             block
             options={[
               { label: "Մանա (Քարտ)", value: "CARD" },
-              { label: "Կենս. (Կանխիկ)", value: "CASH" },
+              { label: "Կենս. (Կանխ.)", value: "CASH" },
             ]}
             onChange={(v) => onWalletChange(v as Wallet)}
           />
@@ -1370,7 +1691,7 @@ function TransactionDrawer({ open, onClose }: { open: boolean; onClose: () => vo
               block
               options={[
                 { label: "Մանա (Քարտ)", value: "CARD", disabled: wallet === "CARD" },
-                { label: "Կենս. (Կանխիկ)", value: "CASH", disabled: wallet === "CASH" },
+                { label: "Կենս. (Կանխ.)", value: "CASH", disabled: wallet === "CASH" },
               ]}
             />
           </Form.Item>
@@ -1382,13 +1703,13 @@ function TransactionDrawer({ open, onClose }: { open: boolean; onClose: () => vo
           </Form.Item>
         )}
 
-        <Form.Item name="note" label="Մագաղաթի նշում (ոչ պարտադիր)">
+        <Form.Item name="note" label="Մագաղաթի նշում (ոչ պարտ.)">
           <Input size="large" placeholder="օր.՝ Մանա խմիչքի լիցքավորում" maxLength={80} />
         </Form.Item>
 
         <div style={{ display: "flex", gap: 10, marginTop: 6 }}>
           <Button block size="large" onClick={onClose}>
-            Չեղարկել
+            Չեղ.
           </Button>
           <Button
             block
