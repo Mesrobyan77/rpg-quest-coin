@@ -1308,31 +1308,31 @@ function TransactionDrawer({ open, onClose }: { open: boolean; onClose: () => vo
           />
         </Form.Item>
 
-        <Form.Item name="wallet" label={type === "TRANSFER" ? "From Wallet" : "Wallet"}>
+        <Form.Item name="wallet" label={type === "TRANSFER" ? "Աղբյուր դրամապանակ" : "Դրամապանակ"}>
           <Segmented
             block
             options={[
-              { label: "Mana (Card)", value: "CARD" },
-              { label: "HP (Cash)", value: "CASH" },
+              { label: "Մանա (Քարտ)", value: "CARD" },
+              { label: "Կենս. (Կանխիկ)", value: "CASH" },
             ]}
             onChange={(v) => onWalletChange(v as Wallet)}
           />
         </Form.Item>
 
         {type === "TRANSFER" && (
-          <Form.Item name="toWallet" label="To Wallet">
+          <Form.Item name="toWallet" label="Նպատակային դրամապանակ">
             <Segmented
               block
               options={[
-                { label: "Mana (Card)", value: "CARD", disabled: wallet === "CARD" },
-                { label: "HP (Cash)", value: "CASH", disabled: wallet === "CASH" },
+                { label: "Մանա (Քարտ)", value: "CARD", disabled: wallet === "CARD" },
+                { label: "Կենս. (Կանխիկ)", value: "CASH", disabled: wallet === "CASH" },
               ]}
             />
           </Form.Item>
         )}
 
         {type !== "TRANSFER" && (
-          <Form.Item name="category" label="Quest Type">
+          <Form.Item name="category" label="Քվեստի տեսակ">
             <Select
               size="large"
               options={CATEGORIES[type].map((c) => ({ label: c, value: c }))}
@@ -1340,8 +1340,8 @@ function TransactionDrawer({ open, onClose }: { open: boolean; onClose: () => vo
           </Form.Item>
         )}
 
-        <Form.Item name="note" label="Scroll Note (optional)">
-          <Input size="large" placeholder="e.g. Mana potion refill" maxLength={80} />
+        <Form.Item name="note" label="Մագաղաթի նշում (ոչ պարտադիր)">
+          <Input size="large" placeholder="օր.՝ Մանա խմիչքի լիցքավորում" maxLength={80} />
         </Form.Item>
 
         <div style={{ display: "flex", gap: 10, marginTop: 6 }}>
