@@ -864,8 +864,8 @@ function WalletGrid() {
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
       <WalletCard
-        title="MANA"
-        subtitle="Card Wallet"
+        title="ՄԱՆԱ"
+        subtitle="Քարտի դրամապանակ"
         amount={cardBalance}
         color={COLORS.mana}
         glow="gk-glow-mana"
@@ -874,8 +874,8 @@ function WalletGrid() {
         percent={safe(cardBalance)}
       />
       <WalletCard
-        title="HEALTH"
-        subtitle="Cash Wallet"
+        title="ԿԵՆՍ."
+        subtitle="Կանխիկ դրամապանակ"
         amount={cashBalance}
         color={COLORS.hp}
         glow="gk-glow-hp"
