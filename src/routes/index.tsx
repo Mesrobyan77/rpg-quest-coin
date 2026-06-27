@@ -1,5 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState, useCallback, createContext, useContext } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  useCallback,
+  createContext,
+  useContext,
+  Component,
+  type ErrorInfo,
+  type ReactNode,
+} from "react";
 import {
   ConfigProvider,
   theme as antdTheme,
@@ -15,29 +25,43 @@ import {
   Popconfirm,
   message,
   Tag,
+  Alert,
 } from "antd";
-import PlusOutlined from "@ant-design/icons/PlusOutlined";
-import ThunderboltFilled from "@ant-design/icons/ThunderboltFilled";
-import HeartFilled from "@ant-design/icons/HeartFilled";
-import TrophyFilled from "@ant-design/icons/TrophyFilled";
-import DeleteOutlined from "@ant-design/icons/DeleteOutlined";
-import SwapOutlined from "@ant-design/icons/SwapOutlined";
-import FireFilled from "@ant-design/icons/FireFilled";
-import RiseOutlined from "@ant-design/icons/RiseOutlined";
-import FallOutlined from "@ant-design/icons/FallOutlined";
+import {
+  PlusOutlined,
+  ThunderboltFilled,
+  HeartFilled,
+  TrophyFilled,
+  DeleteOutlined,
+  SwapOutlined,
+  FireFilled,
+  RiseOutlined,
+  FallOutlined,
+  WarningFilled,
+  ReloadOutlined,
+} from "@ant-design/icons";
 import { motion, AnimatePresence } from "framer-motion";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "GoldKeeper — RPG Finance Quest" },
-      { name: "description", content: "A gamified personal finance dashboard. Track your Gold, manage Mana & HP wallets, and level up your wealth." },
-      { property: "og:title", content: "GoldKeeper — RPG Finance Quest" },
-      { property: "og:description", content: "A gamified personal finance dashboard. Track your Gold, manage Mana & HP wallets, and level up your wealth." },
+      { title: "GoldKeeper — RPG ֆինանսային արկած" },
+      {
+        name: "description",
+        content:
+          "Խաղայնացված անձնական ֆինանսների վահանակ։ Հետևի՛ր քո Ոսկուն, կառավարի՛ր Մանա և Կենսունակություն դրամապանակները։",
+      },
+      { property: "og:title", content: "GoldKeeper — RPG ֆինանսային արկած" },
+      {
+        property: "og:description",
+        content:
+          "Խաղայնացված անձնական ֆինանսների վահանակ։ Հետևի՛ր քո Ոսկուն, կառավարի՛ր Մանա և Կենսունակություն դրամապանակները։",
+      },
     ],
   }),
-  component: GoldKeeperApp,
+  component: GoldKeeperRoot,
 });
+
 
 /* ============================ Types ============================ */
 
