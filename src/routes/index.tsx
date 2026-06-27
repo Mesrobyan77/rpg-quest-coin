@@ -998,7 +998,7 @@ function QuestLog() {
             image={Empty.PRESENTED_IMAGE_SIMPLE}
             description={
               <span style={{ color: COLORS.sub }}>
-                No quests logged yet. Begin your journey, hero.
+                Դեռ քվեստեր չկան։ Սկսի՛ր քո ճանապարհորդությունը, հերոս։
               </span>
             }
           />
