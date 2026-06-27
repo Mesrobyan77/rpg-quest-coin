@@ -763,7 +763,7 @@ function Header() {
             GOLDKEEPER
           </div>
           <div style={{ fontSize: 10, color: COLORS.sub, letterSpacing: "0.18em" }}>
-            FINANCE · QUEST · LOG
+            ՖԻՆԱՆՍ · ՔՎԵՍՏ · ՄԱՏՅԱՆ
           </div>
         </div>
       </div>
@@ -778,7 +778,7 @@ function Header() {
           fontSize: 12,
         }}
       >
-        LVL {level}
+        ՄԱԿ. {level}
       </Tag>
     </div>
   );
