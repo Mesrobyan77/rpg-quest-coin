@@ -1139,13 +1139,13 @@ function TxRow({ tx }: { tx: Transaction }) {
           {formatAmount(tx.amount)} ֏
         </span>
         <Popconfirm
-          title="Undo this quest?"
-          description="Balances will be recalculated."
-          okText="Undo"
-          cancelText="Keep"
+          title="Չեղարկե՞լ այս քվեստը։"
+          description="Մնացորդները կվերահաշվարկվեն։"
+          okText="Չեղարկել"
+          cancelText="Պահել"
           onConfirm={() => {
             removeTransaction(tx.id);
-            message.success({ content: "Quest entry undone.", duration: 1.4 });
+            message.success({ content: "Քվեստի գրառումը չեղարկվեց։", duration: 1.4 });
           }}
         >
           <Button
