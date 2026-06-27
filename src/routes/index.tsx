@@ -495,12 +495,23 @@ function GoldKeeperApp() {
         },
       }}
     >
-      <VaultProvider>
-        <StyleInjector />
-        <BackdropFrame>
-          <Dashboard />
-        </BackdropFrame>
-      </VaultProvider>
+      <RuntimeErrorContext.Provider value={{ reportError }}>
+        <VaultProvider>
+          <StyleInjector />
+          <BackdropFrame>
+            <AnimatePresence>
+              {softError && (
+                <InlineErrorBanner
+                  key="soft-error"
+                  error={softError}
+                  onDismiss={() => setSoftError(null)}
+                />
+              )}
+            </AnimatePresence>
+            <Dashboard />
+          </BackdropFrame>
+        </VaultProvider>
+      </RuntimeErrorContext.Provider>
     </ConfigProvider>
   );
 }
